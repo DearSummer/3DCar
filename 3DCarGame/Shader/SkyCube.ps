@@ -1,0 +1,6 @@
+#include "SkyCube.hlsli"
+
+float4 PS(VertexOut vOut):SV_Target
+{
+    return g_texCube.Sample(g_sam,vOut.posL);
+}

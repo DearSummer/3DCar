@@ -1,0 +1,40 @@
+#include "Basic.hlsli"
+
+// 像素着色器
+float4 PS(VertexOut pIn) : SV_Target
+{
+	float4 texColor = g_tex.Sample(g_sam,pIn.tex);
+	clip(texColor.a - 0.1f);
+
+	pIn.normalW = normalize(pIn.normalW);
+
+	float3 toEyeW = normalize(g_eyePos - pIn.posW);
+	float4 ambine,diffuse,specular;
+	float4 A,D,S;
+	ambine = diffuse = specular = A = D = S = float4(0.0f,0.0f,0.0f,0.0f);
+	DirectionalLight dirLight = g_light;
+	if(g_isReflection)
+	{
+		dirLight.direction = mul(dirLight.direction,(float3x3)(g_reflection));
+	}
+	ComputeDirectionalLight(g_mat,g_light,pIn.normalW,toEyeW,A,D,S);
+	ambine += A;
+	diffuse += D;
+	specular += S;
+
+	
+	float4 litColor = texColor * (ambine + diffuse) + specular;
+
+	if(g_isReflection)
+	{
+		float3 incident = -toEyeW;
+		float3 reflectionVector = reflect(incident,pIn.normalW);
+		float4 reflectionColor = g_texCube.Sample(g_sam,reflectionVector);
+
+		litColor += g_mat.reflect * reflectionColor;
+	}
+
+	litColor.a =  texColor.a * g_mat.diffuse.a;
+    return litColor;
+}
+
